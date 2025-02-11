@@ -1,9 +1,10 @@
 [package]
-name = "start-langchain-rust"
+name = "start_langchain_rust"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+async-trait = "0.1.86"
 langchain-rust = { version = "4.6.0", features = ["postgres", "ollama"] }
 serde_json = "1.0.138"
 tokio = { version = "1.43.0", features = ["full"] }

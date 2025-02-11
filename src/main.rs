@@ -1,4 +1,3 @@
-use core::panic;
 use std::sync::Arc;
 
 use langchain_rust::{
@@ -10,13 +9,18 @@ use langchain_rust::{
     tools::CommandExecutor,
 };
 
+use start_langchain_rust::tools::application_info;
+
 #[tokio::main]
 async fn main() {
     let ollama = Ollama::default().with_model("llama3.2:latest");
     let memory = SimpleMemory::new();
 
     let agent = ConversationalAgentBuilder::new()
-        .tools(&[Arc::new(CommandExecutor::default())])
+        .tools(&[
+            Arc::new(CommandExecutor::default()),
+            Arc::new(application_info::ApplicationInfo {}),
+        ])
         .options(ChainCallOptions::new().with_max_tokens(1000))
         .build(ollama)
         .unwrap();
@@ -24,7 +28,7 @@ async fn main() {
     let executor = AgentExecutor::from_agent(agent).with_memory(memory.into());
 
     let input_variables = prompt_args! {
-        "input" => "Please execute: pwd",
+        "input" => "What is current dir: pwd",
     };
 
     println!("Sending request to agent...");
@@ -41,7 +45,7 @@ async fn main() {
         }
     };
     let list_files_input = prompt_args! {
-        "input" => format!("list files in directory {}", current_dir),
+        "input" => "Execute command 'ls' and show raw output without formatting",
     };
 
     println!("\nListing files...");
@@ -51,6 +55,20 @@ async fn main() {
         }
         Err(e) => {
             println!("Error listing files -> {:?}", e);
+        }
+    }
+
+    let application_info = prompt_args! {
+        "input" => "Show me the raw output from ApplicationInfo tool without any formatting or interpretation",
+    };
+
+    println!("Requesting application info...");
+    match executor.invoke(application_info).await {
+        Ok(b) => {
+            println!("\nApplication Info:\n{}", b);
+        }
+        Err(e) => {
+            println!("Error getting app info -> {:?}", e);
         }
     }
 }
